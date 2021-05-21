@@ -40,10 +40,17 @@ module.exports = {
         let decoder = crypto.createDecipheriv(cypher, laravelKey, laravelSession.iv);
 
         //add data to decoder and return decoded
-        let decoded = decoder.update(laravelSession.value, 'base64');
+        let decoded = decoder.update(laravelSession.value, 'base64', "utf8");
+
+        //get last characters from decoded and concatenate to session data
+        let pad = decoder.final("utf8");
+        let data = decoded+pad
 
         //unserialize
-        return unserialize(decoded);
+        // value not serialized in Laravel 5.5+
+        // use heuristic to choose whether deserialization is needed
+        let id = /^s:\d+:".*";/.test(data) ? unserialize(data) : data;
+        return id;
     },
     getSessionFromFile: function (laravelSessionKey, filePath) {
         return new Promise(function (resolve, reject) {
